@@ -190,11 +190,25 @@ fn deserialize_visitor(
         (
             builder.item().tuple_struct("__Visitor")
                 .generics().with(trait_generics.clone()).build()
-                .with_tys(
-                    trait_generics.ty_params.iter().map(|ty_param| {
-                        builder.ty().phantom_data().id(ty_param.ident)
-                    })
-                )
+                .with_tys({
+                    let lifetimes = trait_generics.lifetimes.iter()
+                        .map(|lifetime_def| {
+                            builder.ty()
+                                .phantom_data()
+                                .ref_().lifetime(lifetime_def.lifetime.name)
+                                .ty()
+                                .unit()
+                        });
+
+                    let ty_params = trait_generics.ty_params.iter()
+                        .map(|ty_param| {
+                            builder.ty()
+                                .phantom_data()
+                                .id(ty_param.ident)
+                        });
+                    
+                    lifetimes.chain(ty_params)
+                })
                 .build(),
             builder.ty().path()
                 .segment("__Visitor").with_generics(trait_generics.clone()).build()
@@ -204,11 +218,11 @@ fn deserialize_visitor(
                 .with_tys(forward_tys)
                 .with_tys(placeholders)
                 .build().build()
-                .with_args(
-                    trait_generics.ty_params.iter().map(|_| {
-                        builder.expr().phantom_data()
-                    })
-                )
+                .with_args({
+                    let len = trait_generics.lifetimes.len() + trait_generics.ty_params.len();
+
+                    (0 .. len).map(|_| builder.expr().phantom_data())
+                })
                 .build(),
             trait_generics,
         )
@@ -359,7 +373,7 @@ fn deserialize_struct(
         vec![deserializer_ty_arg(builder)],
     );
 
-    let (field_visitor, visit_map_expr) = deserialize_struct_visitor(
+    let (field_visitor, fields_stmt, visit_map_expr,) = deserialize_struct_visitor(
         cx,
         builder,
         struct_def,
@@ -368,17 +382,6 @@ fn deserialize_struct(
 
     let type_name = builder.expr().str(type_ident);
 
-    let fields = builder.expr().addr_of().slice()
-        .with_exprs(
-            struct_def.fields.iter()
-                .map(|field| {
-                    match field.node.kind {
-                        ast::NamedField(name, _) => builder.expr().str(name),
-                        ast::UnnamedField(_) => panic!("struct contains unnamed fields"),
-                    }
-                })
-        )
-        .build();
 
     quote_expr!(cx, {
         $field_visitor
@@ -396,9 +399,9 @@ fn deserialize_struct(
             }
         }
 
-        static fields: &'static [&'static str] = $fields;
+        $fields_stmt
 
-        deserializer.visit_named_map($type_name, fields, $visitor_expr)
+        deserializer.visit_named_map($type_name, FIELDS, $visitor_expr)
     })
 }
 
@@ -571,7 +574,7 @@ fn deserialize_struct_variant(
 ) -> P<ast::Expr> {
     let where_clause = &generics.where_clause;
 
-    let (field_visitor, field_expr) = deserialize_struct_visitor(
+    let (field_visitor, fields_stmt, field_expr) = deserialize_struct_visitor(
         cx,
         builder,
         struct_def,
@@ -601,7 +604,9 @@ fn deserialize_struct_variant(
             }
         }
 
-        visitor.visit_map($visitor_expr)
+        $fields_stmt
+
+        visitor.visit_map(FIELDS, $visitor_expr)
     })
 }
 
@@ -752,7 +757,7 @@ fn deserialize_struct_visitor(
     builder: &aster::AstBuilder,
     struct_def: &ast::StructDef,
     struct_path: ast::Path,
-) -> (Vec<P<ast::Item>>, P<ast::Expr>) {
+) -> (Vec<P<ast::Item>>, P<ast::Stmt>, P<ast::Expr>) {
     let field_visitor = deserialize_field_visitor(
         cx,
         builder,
@@ -766,7 +771,23 @@ fn deserialize_struct_visitor(
         struct_def,
     );
 
-    (field_visitor, visit_map_expr)
+    let fields_expr = builder.expr().addr_of().slice()
+        .with_exprs(
+            struct_def.fields.iter()
+                .map(|field| {
+                    match field.node.kind {
+                        ast::NamedField(name, _) => builder.expr().str(name),
+                        ast::UnnamedField(_) => panic!("struct contains unnamed fields"),
+                    }
+                })
+        )
+        .build();
+
+    let fields_stmt = quote_stmt!(cx,
+        const FIELDS: &'static [&'static str] = $fields_expr;
+    ).unwrap();
+
+    (field_visitor, fields_stmt, visit_map_expr)
 }
 
 fn deserialize_map(

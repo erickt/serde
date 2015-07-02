@@ -33,6 +33,125 @@ pub trait Deserializer {
     fn visit<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
+    #[inline]
+    fn visit_bool<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit(visitor)
+    }
+
+    #[inline]
+    fn visit_usize<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit(visitor)
+    }
+
+    #[inline]
+    fn visit_u8<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit(visitor)
+    }
+
+    #[inline]
+    fn visit_u16<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit(visitor)
+    }
+
+    #[inline]
+    fn visit_u32<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit(visitor)
+    }
+
+    #[inline]
+    fn visit_u64<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit(visitor)
+    }
+
+    #[inline]
+    fn visit_isize<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit(visitor)
+    }
+
+    #[inline]
+    fn visit_i8<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit(visitor)
+    }
+
+    #[inline]
+    fn visit_i16<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit(visitor)
+    }
+
+    #[inline]
+    fn visit_i32<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit(visitor)
+    }
+
+    #[inline]
+    fn visit_i64<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit(visitor)
+    }
+
+    #[inline]
+    fn visit_f32<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit(visitor)
+    }
+
+    #[inline]
+    fn visit_f64<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit(visitor)
+    }
+
+    #[inline]
+    fn visit_char<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit(visitor)
+    }
+
+    #[inline]
+    fn visit_str<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit(visitor)
+    }
+
+    #[inline]
+    fn visit_string<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit_str(visitor)
+    }
+
+    #[inline]
+    fn visit_unit<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit(visitor)
+    }
+
     /// The `visit_option` method allows a `Deserialize` type to inform the `Deserializer` that
     /// it's expecting an optional value. This allows deserializers that encode an optional value
     /// as a nullable value to convert the null value into a `None`, and a regular value as
@@ -88,10 +207,23 @@ pub trait Deserializer {
     /// it's expecting a map of values. This allows deserializers to parse sequences that aren't
     /// tagged as maps.
     #[inline]
-    fn visit_named_map<V>(&mut self, _name: &str, visitor: V) -> Result<V::Value, Self::Error>
+    fn visit_named_map<V>(&mut self,
+                          _name: &str,
+                          _fields: &'static [&'static str],
+                          visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor,
     {
         self.visit_map(visitor)
+    }
+
+    /// The `visit_tuple` method allows a `Deserialize` type to inform the `Deserializer` that it's
+    /// expecting a tuple value. This allows deserializers that provide a custom tuple
+    /// serialization to properly deserialize the type.
+    #[inline]
+    fn visit_tuple<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor,
+    {
+        self.visit(visitor)
     }
 
     /// The `visit_enum` method allows a `Deserialize` type to inform the `Deserializer` that it's

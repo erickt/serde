@@ -276,7 +276,7 @@ macro_rules! tuple_impls {
             {
                 #[inline]
                 fn serialize<S: Serializer>(&self, serializer: &mut S) -> Result<(), S::Error> {
-                    serializer.visit_seq($TupleVisitor::new(self))
+                    serializer.visit_tuple($TupleVisitor::new(self))
                 }
             }
         )+

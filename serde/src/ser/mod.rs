@@ -120,6 +120,7 @@ pub trait Serializer {
     #[inline]
     fn visit_enum_unit(&mut self,
                        _name: &str,
+                       _variant_index: usize,
                        _variant: &str) -> Result<(), Self::Error> {
         self.visit_unit()
     }
@@ -132,6 +133,9 @@ pub trait Serializer {
     fn visit_seq<V>(&mut self, visitor: V) -> Result<(), Self::Error>
         where V: SeqVisitor;
 
+    fn visit_seq_elt<T>(&mut self, value: T) -> Result<(), Self::Error>
+        where T: Serialize;
+
     #[inline]
     fn visit_named_seq<V>(&mut self,
                           _name: &'static str,
@@ -142,8 +146,30 @@ pub trait Serializer {
     }
 
     #[inline]
+    fn visit_named_seq_elt<T>(&mut self, value: T) -> Result<(), Self::Error>
+        where T: Serialize
+    {
+        self.visit_seq_elt(value)
+    }
+
+    #[inline]
+    fn visit_tuple<V>(&mut self, visitor: V) -> Result<(), Self::Error>
+        where V: SeqVisitor,
+    {
+        self.visit_seq(visitor)
+    }
+
+    #[inline]
+    fn visit_tuple_elt<T>(&mut self, value: T) -> Result<(), Self::Error>
+        where T: Serialize
+    {
+        self.visit_seq_elt(value)
+    }
+
+    #[inline]
     fn visit_enum_seq<V>(&mut self,
                          _name: &'static str,
+                         _variant_index: usize,
                          _variant: &'static str,
                          visitor: V) -> Result<(), Self::Error>
         where V: SeqVisitor,
@@ -151,11 +177,19 @@ pub trait Serializer {
         self.visit_seq(visitor)
     }
 
-    fn visit_seq_elt<T>(&mut self, value: T) -> Result<(), Self::Error>
-        where T: Serialize;
+    #[inline]
+    fn visit_enum_seq_elt<T>(&mut self, value: T) -> Result<(), Self::Error>
+        where T: Serialize
+    {
+        self.visit_tuple_elt(value)
+    }
 
     fn visit_map<V>(&mut self, visitor: V) -> Result<(), Self::Error>
         where V: MapVisitor;
+
+    fn visit_map_elt<K, V>(&mut self, key: K, value: V) -> Result<(), Self::Error>
+        where K: Serialize,
+              V: Serialize;
 
     #[inline]
     fn visit_named_map<V>(&mut self,
@@ -167,18 +201,31 @@ pub trait Serializer {
     }
 
     #[inline]
+    fn visit_named_map_elt<K, V>(&mut self, key: K, value: V) -> Result<(), Self::Error>
+        where K: Serialize,
+              V: Serialize,
+    {
+        self.visit_map_elt(key, value)
+    }
+
+    #[inline]
     fn visit_enum_map<V>(&mut self,
-                          _name: &'static str,
-                          _variant: &'static str,
-                          visitor: V) -> Result<(), Self::Error>
+                         _name: &'static str,
+                         _variant_index: usize,
+                         _variant: &'static str,
+                         visitor: V) -> Result<(), Self::Error>
         where V: MapVisitor,
     {
         self.visit_map(visitor)
     }
 
-    fn visit_map_elt<K, V>(&mut self, key: K, value: V) -> Result<(), Self::Error>
+    #[inline]
+    fn visit_enum_map_elt<K, V>(&mut self, key: K, value: V) -> Result<(), Self::Error>
         where K: Serialize,
-              V: Serialize;
+              V: Serialize,
+    {
+        self.visit_named_map_elt(key, value)
+    }
 
     /// Specify a format string for the serializer.
     ///

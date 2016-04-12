@@ -2,6 +2,7 @@ use std::default::Default;
 use serde::{Serialize, Serializer, Deserialize, Deserializer};
 
 use token::{
+    self,
     Error,
     Token,
     assert_tokens,
@@ -696,4 +697,58 @@ fn test_deserialize_with_enum() {
             Token::EnumMapEnd,
         ]
     );
+}
+
+#[test]
+fn test_rename_missing_field_error_struct() {
+    let mut de = token::Deserializer::new(vec![
+        Token::StructStart("Superhero", Some(2)),
+
+        Token::StructSep,
+        Token::Str("a1"),
+        Token::I32(1),
+
+        Token::StructEnd,
+    ].into_iter());
+
+    let v: Result<RenameStruct, Error> = Deserialize::deserialize(&mut de);
+    assert_eq!(v, Err(Error::MissingFieldError("a3")));
+
+    let mut de = token::Deserializer::new(vec![
+        Token::StructStart("SuperheroDe", Some(2)),
+
+        Token::StructSep,
+        Token::Str("a1"),
+        Token::I32(1),
+
+        Token::StructEnd,
+    ].into_iter());
+
+    let v: Result<RenameStructSerializeDeserialize, Error> = Deserialize::deserialize(&mut de);
+    assert_eq!(v, Err(Error::MissingFieldError("a5")));
+}
+
+#[test]
+fn test_rename_missing_field_error_enum() {
+    let mut de = token::Deserializer::new(vec![
+        Token::EnumMapStart("Superhero", "barry_allan", Some(1)),
+
+        Token::EnumMapEnd,
+    ].into_iter());
+
+    let v: Result<RenameEnum, Error> = Deserialize::deserialize(&mut de);
+    assert_eq!(v, Err(Error::MissingFieldError("b")));
+
+    let mut de = token::Deserializer::new(vec![
+        Token::EnumMapStart("SuperheroDe", "jason_todd", Some(2)),
+
+        Token::EnumMapSep,
+        Token::Str("a"),
+        Token::I8(0),
+
+        Token::EnumMapEnd,
+    ].into_iter());
+
+    let v: Result<RenameEnumSerializeDeserialize<i8>, Error> = Deserialize::deserialize(&mut de);
+    assert_eq!(v, Err(Error::MissingFieldError("d")));
 }

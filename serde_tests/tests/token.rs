@@ -463,14 +463,14 @@ impl From<value::Error> for Error {
     }
 }
 
-struct Deserializer<I> where I: Iterator<Item=Token<'static>> {
+pub struct Deserializer<I> where I: Iterator<Item=Token<'static>> {
     tokens: iter::Peekable<I>,
 }
 
 impl<I> Deserializer<I>
     where I: Iterator<Item=Token<'static>>
 {
-    fn new(tokens: I) -> Deserializer<I> {
+    pub fn new(tokens: I) -> Deserializer<I> {
         Deserializer {
             tokens: tokens.peekable(),
         }
